@@ -1,0 +1,36 @@
+Employee Management System - Test Accounts
+========================================
+
+Admin Account
+-------------------
+Username: admin
+Email:    admin@example.com
+Password: adminpassword
+Role:     Admin (Full Access)
+
+Manager Account
+-------------------
+Username: manager
+Email:    manager@example.com
+Password: managerpassword
+Role:     Manager (Create/Assign Tasks)
+
+Employee Accounts
+-------------------
+1. User 1
+   Username: user1
+   Email:    user1@example.com
+   Password: password123
+   Role:     Employee
+
+2. User 2
+   Username: user2
+   Email:    user2@example.com
+   Password: password123
+   Role:     Employee
+
+3. Employee 3
+   Username: emp3
+   Email:    emp3@example.com
+   Password: password123
+   Role:     Employee
