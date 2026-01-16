@@ -4,6 +4,9 @@ from typing import Optional
 class UserBase(BaseModel):
     email: EmailStr
     username: str
+    dob: Optional[str] = None
+    mobile_number: Optional[str] = None
+    team_name: Optional[str] = None
 
 class UserCreate(UserBase):
     password: str
@@ -14,5 +17,4 @@ class UserResponse(UserBase):
     is_active: bool
     role: str
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}

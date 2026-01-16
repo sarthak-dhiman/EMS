@@ -9,7 +9,11 @@ class Task(Base):
     title = Column(String, nullable=False)
     description = Column(String)
     status = Column(String, default="Open")
-    priority = Column(String, default="Medium")
     
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True) # Nullable if assigned to team but not specific user yet
     owner = relationship("User", back_populates="tasks")
+    
+    team_id = Column(Integer, ForeignKey("teams.id"), nullable=True)
+    team = relationship("Team", back_populates="tasks")
+    
+    subtasks = relationship("SubTask", back_populates="task", cascade="all, delete-orphan")

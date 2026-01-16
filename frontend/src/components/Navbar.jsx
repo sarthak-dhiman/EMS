@@ -18,7 +18,13 @@ function Navbar() {
             <div style={styles.logo}>EMS</div>
             <div style={styles.links}>
                 <Link to="/" style={styles.link}>Dashboard</Link>
-                {user.role === 'admin' && <Link to="/users" style={styles.link}>Users</Link>}
+                {user.role === 'admin' && (
+                    <>
+                        <Link to="/users" style={styles.link}>Users</Link>
+                        <Link to="/admin/teams" style={styles.link}>Teams</Link>
+                        <Link to="/admin/pending-users" style={styles.link}>Approvals</Link>
+                    </>
+                )}
                 <div style={styles.user}>
                     <span style={{ marginRight: '10px' }}>{user.email} ({user.role})</span>
                     <button onClick={handleLogout} style={styles.logoutBtn}>Logout</button>

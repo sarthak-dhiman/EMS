@@ -1,5 +1,5 @@
 import { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 
 function Login() {
@@ -30,9 +30,9 @@ function Login() {
 
                 <form onSubmit={handleLogin}>
                     <div>
-                        <label>Email:</label><br />
+                        <label>Username or Email:</label><br />
                         <input
-                            type="email"
+                            type="text"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
@@ -49,6 +49,9 @@ function Login() {
                     </div>
                     <button type="submit" style={{ marginTop: '20px', width: '100%' }}>Login</button>
                 </form>
+                <div style={{ marginTop: '15px', textAlign: 'center' }}>
+                    <Link to="/register" style={{ color: '#1890ff' }}>Don't have an account? Register</Link>
+                </div>
             </div>
         </div>
     );

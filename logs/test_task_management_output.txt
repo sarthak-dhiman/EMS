@@ -1,0 +1,309 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.5, pytest-9.0.2, pluggy-1.6.0
+rootdir: D:\EMS
+plugins: anyio-4.12.1
+collected 1 item
+
+tests\test_task_management.py FE                                         [100%]
+
+=================================== ERRORS ====================================
+___________ ERROR at teardown of test_task_lifecycle_with_subtasks ____________
+
+tables = [Table('users', MetaData(), Column('id', Integer(), table=<users>, primary_key=True, nullable=False), Column('username...alarElementColumnDefault(False)), Column('task_id', Integer(), ForeignKey('tasks.id'), table=<subtasks>), schema=None)]
+filter_fn = <function SchemaDropper.visit_metadata.<locals>.<lambda> at 0x000001CA308FC0E0>
+extra_dependencies = None, _warn_for_cycles = False
+
+    def sort_tables_and_constraints(
+        tables, filter_fn=None, extra_dependencies=None, _warn_for_cycles=False
+    ):
+        """Sort a collection of :class:`_schema.Table`  /
+        :class:`_schema.ForeignKeyConstraint`
+        objects.
+    
+        This is a dependency-ordered sort which will emit tuples of
+        ``(Table, [ForeignKeyConstraint, ...])`` such that each
+        :class:`_schema.Table` follows its dependent :class:`_schema.Table`
+        objects.
+        Remaining :class:`_schema.ForeignKeyConstraint`
+        objects that are separate due to
+        dependency rules not satisfied by the sort are emitted afterwards
+        as ``(None, [ForeignKeyConstraint ...])``.
+    
+        Tables are dependent on another based on the presence of
+        :class:`_schema.ForeignKeyConstraint` objects, explicit dependencies
+        added by :meth:`_schema.Table.add_is_dependent_on`,
+        as well as dependencies
+        stated here using the :paramref:`~.sort_tables_and_constraints.skip_fn`
+        and/or :paramref:`~.sort_tables_and_constraints.extra_dependencies`
+        parameters.
+    
+        :param tables: a sequence of :class:`_schema.Table` objects.
+    
+        :param filter_fn: optional callable which will be passed a
+         :class:`_schema.ForeignKeyConstraint` object,
+         and returns a value based on
+         whether this constraint should definitely be included or excluded as
+         an inline constraint, or neither.   If it returns False, the constraint
+         will definitely be included as a dependency that cannot be subject
+         to ALTER; if True, it will **only** be included as an ALTER result at
+         the end.   Returning None means the constraint is included in the
+         table-based result unless it is detected as part of a dependency cycle.
+    
+        :param extra_dependencies: a sequence of 2-tuples of tables which will
+         also be considered as dependent on each other.
+    
+        .. seealso::
+    
+            :func:`.sort_tables`
+    
+    
+        """
+    
+        fixed_dependencies = set()
+        mutable_dependencies = set()
+    
+        if extra_dependencies is not None:
+            fixed_dependencies.update(extra_dependencies)
+    
+        remaining_fkcs = set()
+        for table in tables:
+            for fkc in table.foreign_key_constraints:
+                if fkc.use_alter is True:
+                    remaining_fkcs.add(fkc)
+                    continue
+    
+                if filter_fn:
+                    filtered = filter_fn(fkc)
+    
+                    if filtered is True:
+                        remaining_fkcs.add(fkc)
+                        continue
+    
+                dependent_on = fkc.referred_table
+                if dependent_on is not table:
+                    mutable_dependencies.add((dependent_on, table))
+    
+            fixed_dependencies.update(
+                (parent, table) for parent in table._extra_dependencies
+            )
+    
+        try:
+>           candidate_sort = list(
+                topological.sort(
+                    fixed_dependencies.union(mutable_dependencies),
+                    tables,
+                )
+            )
+
+venv\Lib\site-packages\sqlalchemy\sql\ddl.py:1403: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+venv\Lib\site-packages\sqlalchemy\util\topological.py:73: in sort
+    for set_ in sort_as_subsets(tuples, allitems):
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tuples = {(Table('teams', MetaData(), Column('id', Integer(), table=<teams>, primary_key=True, nullable=False), Column('name', ...ignKey('users.id'), table=<tasks>), Column('team_id', Integer(), ForeignKey('teams.id'), table=<tasks>), schema=None))}
+allitems = [Table('users', MetaData(), Column('id', Integer(), table=<users>, primary_key=True, nullable=False), Column('username...alarElementColumnDefault(False)), Column('task_id', Integer(), ForeignKey('tasks.id'), table=<subtasks>), schema=None)]
+
+    def sort_as_subsets(
+        tuples: Collection[Tuple[_T, _T]], allitems: Collection[_T]
+    ) -> Iterator[Sequence[_T]]:
+        edges: DefaultDict[_T, Set[_T]] = util.defaultdict(set)
+        for parent, child in tuples:
+            edges[child].add(parent)
+    
+        todo = list(allitems)
+        todo_set = set(allitems)
+    
+        while todo_set:
+            output = []
+            for node in todo:
+                if todo_set.isdisjoint(edges[node]):
+                    output.append(node)
+    
+            if not output:
+>               raise CircularDependencyError(
+                    "Circular dependency detected.",
+                    find_cycles(tuples, allitems),
+                    _gen_edges(edges),
+                )
+E               sqlalchemy.exc.CircularDependencyError: Circular dependency detected. (Table('users', MetaData(), Column('id', Integer(), table=<users>, primary_key=True, nullable=False), Column('username', String(), table=<users>, nullable=False), Column('email', String(), table=<users>, nullable=False), Column('hashed_password', String(), table=<users>, nullable=False), Column('role', String(), table=<users>, nullable=False, default=ScalarElementColumnDefault('employee')), Column('is_active', Boolean(), table=<users>, default=ScalarElementColumnDefault(False)), Column('dob', String(), table=<users>), Column('mobile_number', String(), table=<users>), Column('team_name', String(), table=<users>), Column('team_id', Integer(), ForeignKey('teams.id'), table=<users>), schema=None), Table('teams', MetaData(), Column('id', Integer(), table=<teams>, primary_key=True, nullable=False), Column('name', String(), table=<teams>, nullable=False), Column('description', String(), table=<teams>), Column('created_at', DateTime(), table=<teams>, default=CallableColumnDefault(<function datetime.utcnow at 0x000001CA300463E0>)), Column('manager_id', Integer(), ForeignKey('users.id'), table=<teams>), schema=None))
+
+venv\Lib\site-packages\sqlalchemy\util\topological.py:47: CircularDependencyError
+
+During handling of the above exception, another exception occurred:
+
+self = <sqlalchemy.sql.ddl.SchemaDropper object at 0x000001CA308CACD0>
+metadata = MetaData()
+
+    def visit_metadata(self, metadata):
+        if self.tables is not None:
+            tables = self.tables
+        else:
+            tables = list(metadata.tables.values())
+    
+        try:
+            unsorted_tables = [t for t in tables if self._can_drop_table(t)]
+            collection = list(
+                reversed(
+>                   sort_tables_and_constraints(
+                        unsorted_tables,
+                        filter_fn=lambda constraint: (
+                            False
+                            if not self.dialect.supports_alter
+                            or constraint.name is None
+                            else None
+                        ),
+                    )
+                )
+            )
+
+venv\Lib\site-packages\sqlalchemy\sql\ddl.py:1087: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+venv\Lib\site-packages\sqlalchemy\sql\ddl.py:1434: in sort_tables_and_constraints
+    candidate_sort = list(
+venv\Lib\site-packages\sqlalchemy\util\topological.py:73: in sort
+    for set_ in sort_as_subsets(tuples, allitems):
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tuples = {(Table('teams', MetaData(), Column('id', Integer(), table=<teams>, primary_key=True, nullable=False), Column('name', ...ignKey('users.id'), table=<tasks>), Column('team_id', Integer(), ForeignKey('teams.id'), table=<tasks>), schema=None))}
+allitems = [Table('users', MetaData(), Column('id', Integer(), table=<users>, primary_key=True, nullable=False), Column('username...alarElementColumnDefault(False)), Column('task_id', Integer(), ForeignKey('tasks.id'), table=<subtasks>), schema=None)]
+
+    def sort_as_subsets(
+        tuples: Collection[Tuple[_T, _T]], allitems: Collection[_T]
+    ) -> Iterator[Sequence[_T]]:
+        edges: DefaultDict[_T, Set[_T]] = util.defaultdict(set)
+        for parent, child in tuples:
+            edges[child].add(parent)
+    
+        todo = list(allitems)
+        todo_set = set(allitems)
+    
+        while todo_set:
+            output = []
+            for node in todo:
+                if todo_set.isdisjoint(edges[node]):
+                    output.append(node)
+    
+            if not output:
+>               raise CircularDependencyError(
+                    "Circular dependency detected.",
+                    find_cycles(tuples, allitems),
+                    _gen_edges(edges),
+                )
+E               sqlalchemy.exc.CircularDependencyError: Circular dependency detected. (Table('users', MetaData(), Column('id', Integer(), table=<users>, primary_key=True, nullable=False), Column('username', String(), table=<users>, nullable=False), Column('email', String(), table=<users>, nullable=False), Column('hashed_password', String(), table=<users>, nullable=False), Column('role', String(), table=<users>, nullable=False, default=ScalarElementColumnDefault('employee')), Column('is_active', Boolean(), table=<users>, default=ScalarElementColumnDefault(False)), Column('dob', String(), table=<users>), Column('mobile_number', String(), table=<users>), Column('team_name', String(), table=<users>), Column('team_id', Integer(), ForeignKey('teams.id'), table=<users>), schema=None), Table('teams', MetaData(), Column('id', Integer(), table=<teams>, primary_key=True, nullable=False), Column('name', String(), table=<teams>, nullable=False), Column('description', String(), table=<teams>), Column('created_at', DateTime(), table=<teams>, default=CallableColumnDefault(<function datetime.utcnow at 0x000001CA300463E0>)), Column('manager_id', Integer(), ForeignKey('users.id'), table=<teams>), schema=None))
+
+venv\Lib\site-packages\sqlalchemy\util\topological.py:47: CircularDependencyError
+
+The above exception was the direct cause of the following exception:
+
+    @pytest.fixture(scope="module")
+    def test_db():
+        Base.metadata.create_all(bind=engine)
+        db = Session(bind=engine)
+        yield db
+        db.close()
+>       Base.metadata.drop_all(bind=engine)
+
+tests\test_task_management.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+venv\Lib\site-packages\sqlalchemy\sql\schema.py:5956: in drop_all
+    bind._run_ddl_visitor(
+venv\Lib\site-packages\sqlalchemy\engine\base.py:3260: in _run_ddl_visitor
+    conn._run_ddl_visitor(visitorcallable, element, **kwargs)
+venv\Lib\site-packages\sqlalchemy\engine\base.py:2467: in _run_ddl_visitor
+    ).traverse_single(element)
+      ^^^^^^^^^^^^^^^^^^^^^^^^
+venv\Lib\site-packages\sqlalchemy\sql\visitors.py:661: in traverse_single
+    return meth(obj, **kw)
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <sqlalchemy.sql.ddl.SchemaDropper object at 0x000001CA308CACD0>
+metadata = MetaData()
+
+    def visit_metadata(self, metadata):
+        if self.tables is not None:
+            tables = self.tables
+        else:
+            tables = list(metadata.tables.values())
+    
+        try:
+            unsorted_tables = [t for t in tables if self._can_drop_table(t)]
+            collection = list(
+                reversed(
+                    sort_tables_and_constraints(
+                        unsorted_tables,
+                        filter_fn=lambda constraint: (
+                            False
+                            if not self.dialect.supports_alter
+                            or constraint.name is None
+                            else None
+                        ),
+                    )
+                )
+            )
+        except exc.CircularDependencyError as err2:
+            if not self.dialect.supports_alter:
+                util.warn(
+                    "Can't sort tables for DROP; an "
+                    "unresolvable foreign key "
+                    "dependency exists between tables: %s; and backend does "
+                    "not support ALTER.  To restore at least a partial sort, "
+                    "apply use_alter=True to ForeignKey and "
+                    "ForeignKeyConstraint "
+                    "objects involved in the cycle to mark these as known "
+                    "cycles that will be ignored."
+                    % (", ".join(sorted([t.fullname for t in err2.cycles])))
+                )
+                collection = [(t, ()) for t in unsorted_tables]
+            else:
+>               raise exc.CircularDependencyError(
+                    err2.args[0],
+                    err2.cycles,
+                    err2.edges,
+                    msg="Can't sort tables for DROP; an "
+                    "unresolvable foreign key "
+                    "dependency exists between tables: %s.  Please ensure "
+                    "that the ForeignKey and ForeignKeyConstraint objects "
+                    "involved in the cycle have "
+                    "names so that they can be dropped using "
+                    "DROP CONSTRAINT."
+                    % (", ".join(sorted([t.fullname for t in err2.cycles]))),
+                ) from err2
+E               sqlalchemy.exc.CircularDependencyError: Can't sort tables for DROP; an unresolvable foreign key dependency exists between tables: teams, users.  Please ensure that the ForeignKey and ForeignKeyConstraint objects involved in the cycle have names so that they can be dropped using DROP CONSTRAINT.
+
+venv\Lib\site-packages\sqlalchemy\sql\ddl.py:1113: CircularDependencyError
+================================== FAILURES ===================================
+______________________ test_task_lifecycle_with_subtasks ______________________
+
+manager_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJtZ3JfdG1AZW1zLmNvbSIsImV4cCI6MTc2ODU0ODQwOX0.S1QAHQhfFzWFzEW6iFm1m2PhppW_TMmucvmGhx8WC2E'
+test_db = <sqlalchemy.orm.session.Session object at 0x000001CA2D8FD010>
+
+    def test_task_lifecycle_with_subtasks(manager_token, test_db):
+        headers = {"Authorization": f"Bearer {manager_token}"}
+    
+        # 1. Create Task
+        task_payload = {"title": "Main Task", "description": "Desc"}
+        res_task = client.post("/tasks/", json=task_payload, headers=headers)
+        assert res_task.status_code == 200
+        task_id = res_task.json()["id"]
+    
+        # 2. Add Subtask
+        res_sub = client.post(f"/tasks/{task_id}/subtasks", json={"title": "Subtask 1"}, headers=headers)
+>       assert res_sub.status_code == 200
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests\test_task_management.py:39: AssertionError
+============================== warnings summary ===============================
+tests/test_task_management.py::test_task_lifecycle_with_subtasks
+  D:\EMS\venv\Lib\site-packages\jose\jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = timegm(datetime.utcnow().utctimetuple())
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_task_management.py::test_task_lifecycle_with_subtasks - ass...
+ERROR tests/test_task_management.py::test_task_lifecycle_with_subtasks - sqla...
+==================== 1 failed, 1 warning, 1 error in 1.54s ====================

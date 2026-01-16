@@ -1,36 +1,57 @@
-Employee Management System - Test Accounts
-========================================
+--- EMS CREDENTIALS ---
 
-Admin Account
--------------------
-Username: admin
-Email:    admin@example.com
-Password: adminpassword
-Role:     Admin (Full Access)
+User: admin
+Email: admin@ems.com
+Role: admin
+Team: None
+Password: password123
+--------------------
 
-Manager Account
--------------------
-Username: manager
-Email:    manager@example.com
-Password: managerpassword
-Role:     Manager (Create/Assign Tasks)
+User: eng_manager
+Email: eng.manager@ems.com
+Role: manager
+Team: Engineering
+Password: password123
+--------------------
 
-Employee Accounts
--------------------
-1. User 1
-   Username: user1
-   Email:    user1@example.com
-   Password: password123
-   Role:     Employee
+User: alice
+Email: alice@ems.com
+Role: employee
+Team: Engineering
+Password: password123
+--------------------
 
-2. User 2
-   Username: user2
-   Email:    user2@example.com
-   Password: password123
-   Role:     Employee
+User: bob
+Email: bob@ems.com
+Role: employee
+Team: Engineering
+Password: password123
+--------------------
 
-3. Employee 3
-   Username: emp3
-   Email:    emp3@example.com
-   Password: password123
-   Role:     Employee
+User: mkt_manager
+Email: mkt.manager@ems.com
+Role: manager
+Team: Marketing
+Password: password123
+--------------------
+
+User: charlie
+Email: charlie@ems.com
+Role: employee
+Team: Marketing
+Password: password123
+--------------------
+
+User: design_manager
+Email: design.manager@ems.com
+Role: manager
+Team: Design
+Password: password123
+--------------------
+
+User: dave
+Email: dave@ems.com
+Role: employee
+Team: Design
+Password: password123
+--------------------

@@ -2,13 +2,13 @@ from sqlalchemy.orm import Session
 from app.models.task import Task
 from app.schemas.task import TaskCreate, TaskUpdate
 
-def create_new_task(db: Session, task: TaskCreate, user_id: int):
+def create_new_task(db: Session, task: TaskCreate, user_id: int = None, team_id: int = None):
     # We map the Pydantic schema to the Database Model
     db_task = Task(
         title=task.title,
         description=task.description,
-        priority=task.priority,
-        user_id=user_id  # <--- CRITICAL: Link task to the User
+        user_id=user_id,
+        team_id=team_id
     )
     db.add(db_task)
     db.commit()
