@@ -30,7 +30,7 @@ app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 app.include_router(task_router.router, prefix="/tasks", tags=["Tasks"])
 
 from app.routes import subtask
-app.include_router(subtask.router, prefix="/tasks", tags=["SubTasks"])
+app.include_router(subtask.router, tags=["SubTasks"])
 
 from app.routes import admin
 app.include_router(admin.router, prefix="/admin", tags=["Admin"])

@@ -16,6 +16,7 @@ function Dashboard() {
     // New Task State
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+    const [priority, setPriority] = useState('medium');
     const [assigneeId, setAssigneeId] = useState('');
 
     useEffect(() => {
@@ -51,26 +52,18 @@ function Dashboard() {
             const payload = {
                 title,
                 description,
+                priority,
                 user_id: assigneeId ? parseInt(assigneeId) : null
             };
             await api.post('/tasks/', payload);
             setShowModal(false);
             fetchTasks();
-            // Reset form
             setTitle('');
             setDescription('');
+            setPriority('medium');
             setAssigneeId('');
         } catch (error) {
             alert("Failed to create task");
-        }
-    };
-
-    const handleComplete = async (taskId) => {
-        try {
-            await api.put(`/tasks/${taskId}/status`, { status: "Completed" });
-            fetchTasks();
-        } catch (error) {
-            alert("Failed to update status");
         }
     };
 
@@ -118,12 +111,6 @@ function Dashboard() {
     };
 
     const refreshSelectedTask = async () => {
-        // optimistically update or re-fetch specific task? 
-        // We fetching all tasks anyway, so let's just find it in the new list. 
-        // But fetchTasks is async state update.
-        // Better to re-fetch single task if we had endpoint, but we don't. 
-        // We'll rely on fetchTasks updating the list and we updating selectedTask from it.
-        // actually for modal responsiveness, manual re-fetch of list is easier.
         const response = await api.get('/tasks/');
         setTasks(response.data);
         const updated = response.data.find(t => t.id === selectedTask.id);
@@ -137,8 +124,8 @@ function Dashboard() {
             <Navbar />
 
             <div className="content">
-                <div className="header">
-                    <h2>My Tasks</h2>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+                    <h2 style={{ fontSize: '2rem', margin: 0, background: 'linear-gradient(to right, white, #a1a1aa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>My Tasks</h2>
                     {isManager && (
                         <button onClick={() => setShowModal(true)} className="create-btn">
                             + New Task
@@ -146,7 +133,7 @@ function Dashboard() {
                     )}
                 </div>
 
-                {loading ? <p>Loading...</p> : (
+                {loading ? <p style={{ color: 'var(--text-secondary)' }}>Loading tasks...</p> : (
                     <div className="task-grid">
                         {tasks.map(task => {
                             const totalSub = task.subtasks ? task.subtasks.length : 0;
@@ -155,20 +142,25 @@ function Dashboard() {
 
                             return (
                                 <div key={task.id} className="task-card" onClick={() => setSelectedTask(task)} style={{ cursor: 'pointer' }}>
-                                    <div className="task-header">
-                                        <h3>{task.title}</h3>
-                                        <span className={`status-badge ${task.status.toLowerCase()}`}>{task.status}</span>
+                                    <div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '10px' }}>
+                                            <h3 style={{ fontSize: '1.2rem', margin: 0 }}>{task.title}</h3>
+                                            <div style={{ display: 'flex', gap: '5px' }}>
+                                                {task.priority && <span className={`priority-badge priority-${task.priority.toLowerCase()}`}>{task.priority}</span>}
+                                                <span className={`status-badge ${task.status.toLowerCase().replace(' ', '-')}`}>{task.status}</span>
+                                            </div>
+                                        </div>
+                                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '15px' }}>{task.description || 'No description provided.'}</p>
                                     </div>
-                                    <p>{task.description}</p>
 
                                     {totalSub > 0 && (
-                                        <div style={{ marginTop: '10px' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8em', marginBottom: '2px' }}>
+                                        <div style={{ marginTop: 'auto' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8em', marginBottom: '6px', color: 'var(--text-secondary)' }}>
                                                 <span>Progress</span>
                                                 <span>{progress}%</span>
                                             </div>
-                                            <div style={{ width: '100%', background: '#444', height: '6px', borderRadius: '3px' }}>
-                                                <div style={{ width: `${progress}%`, background: '#1890ff', height: '100%', borderRadius: '3px', transition: 'width 0.3s' }}></div>
+                                            <div style={{ width: '100%', background: 'rgba(255,255,255,0.1)', height: '6px', borderRadius: '3px', overflow: 'hidden' }}>
+                                                <div style={{ width: `${progress}%`, background: 'var(--primary)', height: '100%', borderRadius: '3px', transition: 'all 0.4s ease' }}></div>
                                             </div>
                                         </div>
                                     )}
@@ -183,7 +175,7 @@ function Dashboard() {
                 <div className="modal-overlay">
                     <div className="modal">
                         <h3>Create New Task</h3>
-                        <form onSubmit={handleCreateTask}>
+                        <form onSubmit={handleCreateTask} style={{ display: 'grid', gap: '15px' }}>
                             <input
                                 placeholder="Title"
                                 value={title}
@@ -194,16 +186,25 @@ function Dashboard() {
                                 placeholder="Description"
                                 value={description}
                                 onChange={e => setDescription(e.target.value)}
+                                style={{ minHeight: '100px', resize: 'vertical' }}
                             />
+                            <select
+                                value={priority}
+                                onChange={e => setPriority(e.target.value)}
+                            >
+                                <option value="low">Low Priority</option>
+                                <option value="medium">Medium Priority</option>
+                                <option value="high">High Priority</option>
+                            </select>
                             <input
                                 type="number"
                                 placeholder="Assign to User ID (Optional)"
                                 value={assigneeId}
                                 onChange={e => setAssigneeId(e.target.value)}
                             />
-                            <div className="modal-actions">
-                                <button type="button" onClick={() => setShowModal(false)} className="cancel-btn">Cancel</button>
-                                <button type="submit" className="submit-btn">Create</button>
+                            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                                <button type="button" onClick={() => setShowModal(false)} className="cancel-btn" style={{ flex: 1 }}>Cancel</button>
+                                <button type="submit" className="submit-btn" style={{ flex: 1 }}>Create Card</button>
                             </div>
                         </form>
                     </div>
@@ -212,36 +213,45 @@ function Dashboard() {
 
             {selectedTask && (
                 <div className="modal-overlay">
-                    <div className="modal" style={{ maxWidth: '700px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                    <div className="modal" style={{ maxWidth: '600px', width: '90%' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', paddingBottom: '15px', borderBottom: '1px solid var(--glass-border)' }}>
                             <input
                                 value={selectedTask.title}
                                 onChange={(e) => handleUpdateTaskDetails({ title: e.target.value })}
-                                style={{ fontSize: '1.5em', background: 'transparent', border: 'none', color: 'white', fontWeight: 'bold', width: '70%' }}
+                                style={{ fontSize: '1.5em', background: 'transparent', border: 'none', color: 'white', fontWeight: 'bold', width: '80%', padding: 0 }}
                             />
-                            <button onClick={() => setSelectedTask(null)} style={{ background: 'transparent', color: '#aaa', fontSize: '1.5em' }}>×</button>
+                            <button onClick={() => setSelectedTask(null)} style={{ background: 'transparent', color: 'var(--text-secondary)', fontSize: '1.5rem', padding: '0 5px' }}>×</button>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '25px' }}>
                             <div>
-                                <label>Status</label>
+                                <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '5px', display: 'block' }}>Status</label>
                                 <select
                                     value={selectedTask.status}
                                     onChange={(e) => handleUpdateTaskDetails({ status: e.target.value })}
-                                    style={{ width: '100%', marginTop: '5px', padding: '8px', background: '#333', color: 'white' }}
+                                    style={{ marginBottom: '15px' }}
                                 >
                                     <option value="Open">Open</option>
                                     <option value="In Progress">In Progress</option>
                                     <option value="Completed">Completed</option>
                                 </select>
+
+                                <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '5px', display: 'block' }}>Priority</label>
+                                <select
+                                    value={selectedTask.priority || 'medium'}
+                                    onChange={(e) => handleUpdateTaskDetails({ priority: e.target.value })}
+                                >
+                                    <option value="low">Low</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="high">High</option>
+                                </select>
                             </div>
                             {isManager && (
                                 <div>
-                                    <label>Assigned Team</label>
+                                    <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '5px', display: 'block' }}>Assigned Team</label>
                                     <select
                                         value={selectedTask.team_id || ''}
                                         onChange={(e) => handleUpdateTaskDetails({ team_id: parseInt(e.target.value) })}
-                                        style={{ width: '100%', marginTop: '5px', padding: '8px', background: '#333', color: 'white' }}
                                     >
                                         <option value="">Unassigned</option>
                                         {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
@@ -250,25 +260,30 @@ function Dashboard() {
                             )}
                         </div>
 
-                        <textarea
-                            value={selectedTask.description || ''}
-                            onChange={(e) => handleUpdateTaskDetails({ description: e.target.value })}
-                            placeholder="Description..."
-                            style={{ width: '100%', minHeight: '80px', background: '#333', color: 'white', padding: '10px', marginBottom: '20px' }}
-                        />
+                        <div style={{ marginBottom: '30px' }}>
+                            <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '5px', display: 'block' }}>Description</label>
+                            <textarea
+                                value={selectedTask.description || ''}
+                                onChange={(e) => handleUpdateTaskDetails({ description: e.target.value })}
+                                placeholder="Add a description..."
+                                style={{ width: '100%', minHeight: '100px', resize: 'vertical' }}
+                            />
+                        </div>
 
-                        <h4>Subtasks</h4>
-                        <div style={{ marginBottom: '15px' }}>
+                        <h4 style={{ marginBottom: '15px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontSize: '0.85rem', letterSpacing: '1px' }}>Subtasks</h4>
+                        <div style={{ marginBottom: '20px', display: 'grid', gap: '8px' }}>
                             {selectedTask.subtasks && selectedTask.subtasks.map(sub => (
-                                <div key={sub.id} style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', padding: '8px', background: '#2a2a2a', borderRadius: '4px' }}>
+                                <div key={sub.id} style={{ display: 'flex', alignItems: 'center', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', transition: 'background 0.2s' }}>
                                     <input
                                         type="checkbox"
                                         checked={sub.is_completed}
                                         onChange={() => handleSubtaskToggle(sub.id, sub.is_completed, sub.title)}
-                                        style={{ marginRight: '10px' }}
+                                        style={{ width: '18px', height: '18px', marginRight: '15px', accentColor: 'var(--primary)' }}
                                     />
-                                    <span style={{ textDecoration: sub.is_completed ? 'line-through' : 'none', flex: 1 }}>{sub.title}</span>
-                                    <button onClick={() => handleSubtaskDelete(sub.id)} style={{ background: 'transparent', color: '#ff4d4f', padding: '0 5px' }}>×</button>
+                                    <span style={{ textDecoration: sub.is_completed ? 'line-through' : 'none', color: sub.is_completed ? 'var(--text-secondary)' : 'white', flex: 1 }}>{sub.title}</span>
+                                    <button onClick={() => handleSubtaskDelete(sub.id)} style={{ background: 'transparent', color: 'var(--danger)', padding: '5px', opacity: 0.7 }}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                    </button>
                                 </div>
                             ))}
                         </div>
@@ -280,7 +295,7 @@ function Dashboard() {
                                 onChange={e => setSubtaskTitle(e.target.value)}
                                 style={{ flex: 1 }}
                             />
-                            <button type="submit" style={{ padding: '8px 15px' }}>Add</button>
+                            <button type="submit" className="primary-btn" style={{ padding: '0.75rem 1.5rem' }}>Add</button>
                         </form>
                     </div>
                 </div>

@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from app.core.database import SessionLocal, engine, Base
 from app.models.user import User
 from app.models.task import Task
+from app.models.subtask import SubTask
 from app.models.team import Team
 from app.core.security import get_password_hash
 from passlib.context import CryptContext
@@ -140,6 +141,7 @@ def seed_data():
                 new_task = Task(
                     title=t_conf["title"],
                     description=f"Task for {t_conf['team']}",
+                    priority="Medium",
                     status=t_conf["status"],
                     team_id=team.id,
                     user_id=user_id

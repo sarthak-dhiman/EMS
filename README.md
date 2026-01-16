@@ -41,6 +41,32 @@ A comprehensive full-stack application for managing employees, teams, and tasks 
 - **Styling**: CSS Modules / Vanilla CSS
 - **HTTP Client**: Axios with Interceptors for Auth consistency
 
+## Project Structure
+
+```
+EMS/
+├── app/
+│   ├── core/           # Database & Security config
+│   ├── models/         # SQLAlchemy Database Models
+│   ├── routes/         # API Route Handlers
+│   ├── schemas/        # Pydantic Response/Request Schemas
+│   ├── services/       # Business Logic Layer
+│   └── main.py         # Application Entry Point
+├── frontend/
+│   ├── src/
+│   │   ├── components/ # Reusable UI Components
+│   │   ├── context/    # React Context (Auth)
+│   │   ├── pages/      # Application Pages (Dashboard, Login, Admin)
+│   │   ├── api.js      # Axios Setup & Interceptors
+│   │   └── App.jsx     # Main React Component
+│   └── package.json
+├── tests/              # Backend Pytest Suite
+├── db_seeder.py        # Database Population Script
+├── requirements.txt    # Python Dependencies
+├── .env                # Environment Variables (Not committed)
+└── README.md
+```
+
 ## Setup Instructions
 
 ### Prerequisites
@@ -51,7 +77,7 @@ A comprehensive full-stack application for managing employees, teams, and tasks 
 ### Backend Setup
 1. **Navigate to project root**:
    ```bash
-   cd d:\EMS
+   cd "insert your own directory"
    ```
 2. **Create and Activate Virtual Environment**:
    ```bash

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String , Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String , Boolean, ForeignKey, Date
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -11,10 +11,9 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     role = Column(String, nullable=False, default="employee")
     is_active = Column(Boolean, default=False)
-    dob = Column(String, nullable=True) # Storing as string for simplicity, or Date
+    dob = Column(Date, nullable=True) 
     mobile_number = Column(String, nullable=True)
-    team_name = Column(String, nullable=True) # Legacy field, maybe deprecate in favor of team_id relationship
-    
+    team_name = Column(String, nullable=True)
     team_id = Column(Integer, ForeignKey("teams.id"), nullable=True)
     
     # Relationships

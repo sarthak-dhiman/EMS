@@ -36,38 +36,43 @@ function AdminPendingUsers() {
             <Navbar />
             <div className="content">
                 <h2>Pending User Approvals</h2>
-                {error && <p style={{ color: 'red' }}>{error}</p>}
-                {users.length === 0 ? <p>No pending approvals.</p> : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px', background: '#333', color: '#fff' }}>
-                        <thead>
-                            <tr style={{ textAlign: 'left', borderBottom: '1px solid #555' }}>
-                                <th style={{ padding: '10px' }}>ID</th>
-                                <th style={{ padding: '10px' }}>Username</th>
-                                <th style={{ padding: '10px' }}>Email</th>
-                                <th style={{ padding: '10px' }}>Role</th>
-                                <th style={{ padding: '10px' }}>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {users.map(user => (
-                                <tr key={user.id} style={{ borderBottom: '1px solid #444' }}>
-                                    <td style={{ padding: '10px' }}>{user.id}</td>
-                                    <td style={{ padding: '10px' }}>{user.username}</td>
-                                    <td style={{ padding: '10px' }}>{user.email}</td>
-                                    <td style={{ padding: '10px' }}>{user.role}</td>
-                                    <td style={{ padding: '10px' }}>
-                                        <button
-                                            onClick={() => approveUser(user.id)}
-                                            style={{ background: '#52c41a', color: 'white', border: 'none', padding: '5px 10px', cursor: 'pointer', borderRadius: '4px' }}
-                                        >
-                                            Approve
-                                        </button>
-                                    </td>
+                {error && <p style={{ color: 'var(--danger)' }}>{error}</p>}
+
+                <div className="card" style={{ marginTop: '20px', padding: 0, overflow: 'hidden' }}>
+                    {users.length === 0 ? <p style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No pending approvals.</p> : (
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Actions</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
+                            </thead>
+                            <tbody>
+                                {users.map(user => (
+                                    <tr key={user.id}>
+                                        <td>{user.id}</td>
+                                        <td>{user.username}</td>
+                                        <td>{user.email}</td>
+                                        <td>
+                                            <span className="status-badge open">{user.role}</span>
+                                        </td>
+                                        <td>
+                                            <button
+                                                onClick={() => approveUser(user.id)}
+                                                style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '6px 14px', borderRadius: '6px' }}
+                                            >
+                                                Approve
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
             </div>
         </div>
     );

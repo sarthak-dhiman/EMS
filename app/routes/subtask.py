@@ -9,7 +9,7 @@ from app.dependencies import get_current_user
 
 router = APIRouter()
 
-@router.post("/{task_id}/subtasks", response_model=SubTaskResponse)
+@router.post("/tasks/{task_id}/subtasks", response_model=SubTaskResponse)
 def create_subtask(
     task_id: int,
     subtask: SubTaskCreate,

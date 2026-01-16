@@ -10,12 +10,14 @@ class TaskBase(BaseModel):
 class TaskCreate(TaskBase):
     user_id: Optional[int] = None
     team_id: Optional[int] = None
+    priority: Optional[str] = "medium"
 
 
 class TaskUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     status: Optional[str] = None 
+    priority: Optional[str] = None
     team_id: Optional[int] = None
 
 
@@ -35,6 +37,7 @@ class SubTaskResponse(SubTaskBase):
 class TaskResponse(TaskBase):
     id: int
     status: str
+    priority: str
     user_id: Optional[int] = None
     team_id: Optional[int] = None
     subtasks: List[SubTaskResponse] = []

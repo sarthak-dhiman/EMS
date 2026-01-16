@@ -8,7 +8,8 @@ def create_new_task(db: Session, task: TaskCreate, user_id: int = None, team_id:
         title=task.title,
         description=task.description,
         user_id=user_id,
-        team_id=team_id
+        team_id=team_id,
+        priority=task.priority
     )
     db.add(db_task)
     db.commit()

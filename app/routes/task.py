@@ -100,6 +100,8 @@ def update_task_details(
         task.title = task_update.title
     if task_update.description:
         task.description = task_update.description
+    if task_update.priority:
+        task.priority = task_update.priority
     if task_update.team_id:
         task.team_id = task_update.team_id
         

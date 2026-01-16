@@ -56,9 +56,14 @@ function AdminUsers() {
         <div className="dashboard-container">
             <Navbar />
             <div className="content">
-                <h2>User Management</h2>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+                    <h2>User Management</h2>
+                    <button onClick={() => setShowCreateModal(true)} className="create-btn">
+                        + Create User
+                    </button>
+                </div>
 
-                <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', gap: '20px', marginBottom: '30px' }}>
                     <input
                         type="text"
                         placeholder="Search by name or email..."
@@ -76,16 +81,13 @@ function AdminUsers() {
                         <option value="manager">Manager</option>
                         <option value="employee">Employee</option>
                     </select>
-                    <button onClick={() => setShowCreateModal(true)} className="create-btn" style={{ marginLeft: 'auto' }}>
-                        + Create User
-                    </button>
                 </div>
 
                 {showCreateModal && (
                     <div className="modal-overlay">
                         <div className="modal">
                             <h3>Create New User</h3>
-                            <form onSubmit={handleCreateUser}>
+                            <form onSubmit={handleCreateUser} style={{ display: 'grid', gap: '15px' }}>
                                 <input
                                     placeholder="Username"
                                     value={newUser.username}
@@ -114,9 +116,9 @@ function AdminUsers() {
                                     <option value="manager">Manager</option>
                                     <option value="admin">Admin</option>
                                 </select>
-                                <div className="modal-actions">
-                                    <button type="button" onClick={() => setShowCreateModal(false)} className="cancel-btn">Cancel</button>
-                                    <button type="submit" className="submit-btn">Create</button>
+                                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                                    <button type="button" onClick={() => setShowCreateModal(false)} className="cancel-btn" style={{ flex: 1 }}>Cancel</button>
+                                    <button type="submit" className="submit-btn" style={{ flex: 1 }}>Create</button>
                                 </div>
                             </form>
                         </div>
@@ -124,36 +126,33 @@ function AdminUsers() {
                 )}
 
                 <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', color: '#fff' }}>
+                    <table>
                         <thead>
-                            <tr style={{ background: '#333', textAlign: 'left' }}>
-                                <th style={{ padding: '15px' }}>ID</th>
-                                <th style={{ padding: '15px' }}>Username</th>
-                                <th style={{ padding: '15px' }}>Email</th>
-                                <th style={{ padding: '15px' }}>Role</th>
-                                <th style={{ padding: '15px' }}>Team</th>
-                                <th style={{ padding: '15px' }}>Actions</th>
+                            <tr>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Team</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {users.map(user => (
-                                <tr key={user.id} style={{ borderBottom: '1px solid #333' }}>
-                                    <td style={{ padding: '15px' }}>{user.id}</td>
-                                    <td style={{ padding: '15px' }}>{user.username}</td>
-                                    <td style={{ padding: '15px' }}>{user.email}</td>
-                                    <td style={{ padding: '15px' }}>
-                                        <span className={`priority ${user.role === 'admin' ? 'high' :
-                                            user.role === 'manager' ? 'medium' : 'low'
-                                            }`}>
+                                <tr key={user.id}>
+                                    <td>{user.id}</td>
+                                    <td>{user.username}</td>
+                                    <td>{user.email}</td>
+                                    <td>
+                                        <span className={`status-badge ${user.role}`}>
                                             {user.role}
                                         </span>
                                     </td>
-                                    <td style={{ padding: '15px' }}>{user.team_name || '-'}</td>
-                                    <td style={{ padding: '15px' }}>
+                                    <td>{user.team_name || '-'}</td>
+                                    <td>
                                         <button
                                             onClick={() => handleDelete(user.id)}
-                                            className="delete-btn"
-                                            style={{ padding: '5px 10px', fontSize: '0.8em' }}
+                                            style={{ background: 'transparent', color: 'var(--danger)', padding: '5px 8px', fontSize: '0.9em' }}
                                         >
                                             Delete
                                         </button>
