@@ -16,6 +16,12 @@ dist/
 # Database
 *.sqlite3
 *.db
+test_admin_users.db
+test_teams.db
+
+# Logs
+logs/
+logins.txt
 
 # Frontend (Node)
 frontend/node_modules/
