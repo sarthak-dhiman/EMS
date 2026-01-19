@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import api from '../api';
 import AuthContext from '../context/AuthContext';
 import Navbar from '../components/Navbar';
+import { useToast } from '../context/ToastContext';
 
 function Dashboard() {
     const { user } = useContext(AuthContext);
@@ -13,6 +14,7 @@ function Dashboard() {
     const [teams, setTeams] = useState([]);
     const [selectedTask, setSelectedTask] = useState(null);
     const [subtaskTitle, setSubtaskTitle] = useState('');
+    const [taskHistory, setTaskHistory] = useState([]);
 
     // New Task State
     const [title, setTitle] = useState('');
@@ -20,6 +22,8 @@ function Dashboard() {
     const [priority, setPriority] = useState('medium');
     const [assigneeId, setAssigneeId] = useState('');
     const [deadline, setDeadline] = useState('');
+    const [teamId, setTeamId] = useState('');
+    const { addToast } = useToast();
 
     useEffect(() => {
         fetchTasks();
@@ -56,18 +60,22 @@ function Dashboard() {
                 description,
                 priority,
                 deadline: deadline || null,
-                user_id: assigneeId ? parseInt(assigneeId) : null
+                user_id: assigneeId ? parseInt(assigneeId) : null,
+                team_id: teamId ? parseInt(teamId) : (user?.role === 'manager' && user?.team_id ? user.team_id : null)
             };
             await api.post('/tasks/', payload);
+            addToast("Task Created", `Successfully created task: ${title}`);
             setShowModal(false);
-            fetchTasks();
+            await fetchTasks(); // Wait for fetch before modal closes for smoother feel
             setTitle('');
             setDescription('');
             setPriority('medium');
             setAssigneeId('');
             setDeadline('');
+            setTeamId('');
         } catch (error) {
-            alert("Failed to create task");
+            console.error(error);
+            addToast("Error", "Failed to create task");
         }
     };
 
@@ -124,6 +132,26 @@ function Dashboard() {
         const updated = response.data.find(t => t.id === selectedTask.id);
         setSelectedTask(updated);
     };
+
+    // Fetch history when a task is selected
+    useEffect(() => {
+        if (!selectedTask) {
+            setTaskHistory([]);
+            return;
+        }
+
+        const fetchTaskHistory = async () => {
+            try {
+                const res = await api.get(`/tasks/${selectedTask.id}/history`);
+                setTaskHistory(res.data);
+            } catch (err) {
+                console.error('Failed to fetch task history', err);
+                setTaskHistory([]);
+            }
+        };
+
+        fetchTaskHistory();
+    }, [selectedTask]);
 
     const isManager = user?.role === 'admin' || user?.role === 'manager';
 
@@ -235,10 +263,7 @@ function Dashboard() {
                             </select>
                             <input
                                 type="datetime-local"
-                                value={formData?.deadline || ''}
-                                // wait, I used state 'deadline' not formData in Dashboard.jsx quick create?
-                                // Dashboard.jsx uses individual state variables: title, description...
-                                // I need to add 'deadline' state.
+                                value={deadline || ''}
                                 onChange={e => setDeadline(e.target.value)}
                             />
                             <input
@@ -247,6 +272,15 @@ function Dashboard() {
                                 value={assigneeId}
                                 onChange={e => setAssigneeId(e.target.value)}
                             />
+                            {user?.role === 'admin' && (
+                                <select
+                                    value={teamId}
+                                    onChange={e => setTeamId(e.target.value)}
+                                >
+                                    <option value="">Select Team (Optional)</option>
+                                    {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                </select>
+                            )}
                             <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
                                 <button type="button" onClick={() => setShowModal(false)} className="cancel-btn" style={{ flex: 1 }}>Cancel</button>
                                 <button type="submit" className="submit-btn" style={{ flex: 1 }}>Create Card</button>
@@ -372,6 +406,30 @@ function Dashboard() {
                             />
                             <button type="submit" className="primary-btn" style={{ padding: '0.75rem 1.5rem' }}>Add</button>
                         </form>
+
+                        <div style={{ marginTop: '20px' }}>
+                            <h4 style={{ marginBottom: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontSize: '0.85rem', letterSpacing: '1px' }}>History</h4>
+                            {taskHistory.length === 0 ? (
+                                <p style={{ color: 'var(--text-secondary)' }}>No history available for this task.</p>
+                            ) : (
+                                <div style={{ display: 'grid', gap: '10px' }}>
+                                    {taskHistory.map(h => (
+                                        <div key={h.id} style={{ padding: '10px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', fontSize: '0.9rem' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                                                <div>{h.action}{h.field_changed ? ` — ${h.field_changed}` : ''}</div>
+                                                <div>{new Date(h.timestamp).toLocaleString()}</div>
+                                            </div>
+                                            <div style={{ color: 'white' }}>
+                                                <strong>{h.user?.username || 'Unknown'}</strong>
+                                                {h.old_value || h.new_value ? (
+                                                    <span style={{ marginLeft: '8px', color: 'var(--text-secondary)' }}>: {h.old_value || ''} → {h.new_value || ''}</span>
+                                                ) : null}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}

@@ -13,7 +13,7 @@ class TaskHistory(Base):
     old_value = Column(String, nullable=True)
     new_value = Column(String, nullable=True)
     
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=datetime.now)
     
     task_id = Column(Integer, ForeignKey("tasks.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False) # Who performed the action

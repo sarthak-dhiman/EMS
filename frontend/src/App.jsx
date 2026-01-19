@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useContext } from 'react';
 import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
 import AuthContext from './context/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -36,35 +37,37 @@ const PrivateRoute = ({ roles = [] }) => {
 function App() {
   return (
     <Router>
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
+      <ToastProvider>
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
 
-          {/* Protected Routes */}
-          <Route element={<PrivateRoute />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/profile" element={<Profile />} />
-          </Route>
+            {/* Protected Routes */}
+            <Route element={<PrivateRoute />}>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/profile" element={<Profile />} />
+            </Route>
 
-          <Route element={<PrivateRoute roles={['admin']} />}>
-            <Route path="/users" element={<AdminUsers />} />
-            <Route path="/admin/users/create" element={<CreateUser />} />
-            <Route path="/admin/pending-users" element={<AdminPendingUsers />} />
-            <Route path="/admin/teams" element={<AdminTeams />} />
-            <Route path="/admin/teams/create" element={<CreateTeam />} />
-            <Route path="/admin/teams/:id" element={<TeamDetail />} />
-          </Route>
+            <Route element={<PrivateRoute roles={['admin']} />}>
+              <Route path="/users" element={<AdminUsers />} />
+              <Route path="/admin/users/create" element={<CreateUser />} />
+              <Route path="/admin/pending-users" element={<AdminPendingUsers />} />
+              <Route path="/admin/teams" element={<AdminTeams />} />
+              <Route path="/admin/teams/create" element={<CreateTeam />} />
+              <Route path="/admin/teams/:id" element={<TeamDetail />} />
+            </Route>
 
-          <Route element={<PrivateRoute roles={['manager', 'admin']} />}>
-            <Route path="/tasks/create" element={<CreateTask />} />
-            <Route path="/team-dashboard" element={<TeamDashboard />} />
-          </Route>
+            <Route element={<PrivateRoute roles={['manager', 'admin']} />}>
+              <Route path="/tasks/create" element={<CreateTask />} />
+              <Route path="/team-dashboard" element={<TeamDashboard />} />
+            </Route>
 
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </AuthProvider>
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </AuthProvider>
+      </ToastProvider>
     </Router>
   );
 }

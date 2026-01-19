@@ -35,7 +35,7 @@ function TeamDashboard() {
                         <p style={{ color: 'var(--text-secondary)' }}>{team.description}</p>
                     </div>
                     {/* Only Manager/Admin can create task. User role is checked in AuthContext/Route but good to check here too */}
-                    {(user.role === 'manager' || user.role === 'admin') && (
+                    {(user?.role === 'manager' || user?.role === 'admin') && (
                         <button onClick={() => navigate('/tasks/create')} className="create-btn">
                             + Assign Task
                         </button>

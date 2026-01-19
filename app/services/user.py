@@ -63,4 +63,4 @@ def get_all_users(db: Session, search: str = None, role: str = None):
     if role and role != "all":
         query = query.filter(User.role == role)
         
-    return query.all()
+    return query.order_by(User.id.asc()).all()

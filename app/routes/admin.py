@@ -24,7 +24,7 @@ def get_pending_users(
             detail="Not enough permissions"
         )
     
-    users = db.query(User).filter(User.is_active == False).all()
+    users = db.query(User).filter(User.is_active == False).order_by(User.id.asc()).all()
     return users
 
 @router.get("/users", response_model=List[UserResponse])

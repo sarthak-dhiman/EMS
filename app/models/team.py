@@ -9,14 +9,15 @@ class Team(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True, nullable=False)
     description = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    webhook_url = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.now)
     
     # Manager of the team
     manager_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     manager = relationship("User", foreign_keys=[manager_id], back_populates="managed_teams")
     
     # Members of the team
-    members = relationship("User", foreign_keys="User.team_id", back_populates="team")
+    members = relationship("User", foreign_keys="User.team_id", back_populates="team", order_by="User.id")
     
     # Tasks assigned to this team
     tasks = relationship("Task", back_populates="team")

@@ -11,6 +11,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     role = Column(String, nullable=False, default="employee")
     is_active = Column(Boolean, default=False)
+    email_notifications = Column(Boolean, default=True, nullable=False)
     dob = Column(Date, nullable=True) 
     mobile_number = Column(String, nullable=True)
     team_name = Column(String, nullable=True)

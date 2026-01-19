@@ -20,6 +20,7 @@ function CreateTask() {
     const [error, setError] = useState('');
 
     useEffect(() => {
+        if (!user) return;
         if (user.role === 'admin') {
             fetchTeams();
         } else if (user.role === 'manager') {
@@ -30,11 +31,12 @@ function CreateTask() {
 
     // When team_id changes, fetch members (if admin)
     useEffect(() => {
+        if (!user) return;
         if (user.role === 'admin' && formData.team_id) {
             const team = teams.find(t => t.id === parseInt(formData.team_id));
             setTeamMembers(team ? team.members : []);
         }
-    }, [formData.team_id, teams]);
+    }, [formData.team_id, teams, user]);
 
     const fetchTeams = async () => {
         try {
@@ -134,7 +136,7 @@ function CreateTask() {
                                 </div>
                             </div>
 
-                            {user.role === 'admin' && (
+                            {user?.role === 'admin' && (
                                 <div>
                                     <label style={{ display: 'block', marginBottom: '5px' }}>Team</label>
                                     <select

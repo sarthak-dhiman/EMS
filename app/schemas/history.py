@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
+from app.schemas.user import UserResponse
 
 class TaskHistoryResponse(BaseModel):
     id: int
@@ -12,7 +13,7 @@ class TaskHistoryResponse(BaseModel):
     new_value: Optional[str] = None
     timestamp: datetime
     
-    # Optional author info
-    user_username: Optional[str] = None # Or Author object
+    # Optional nested user info
+    user: Optional[UserResponse] = None
 
     model_config = {"from_attributes": True}

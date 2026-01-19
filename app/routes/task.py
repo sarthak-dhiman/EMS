@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
@@ -27,6 +27,7 @@ from app.dependencies import get_current_user
 @router.post("/", response_model=TaskResponse)
 def create_task(
     task: TaskCreate, 
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -52,10 +53,14 @@ def create_task(
                 pass
             else:
                 flag = False
+                # Allow if manager is explicitly manager of the assignee's team
                 for team in current_user.managed_teams:
-                     if team.id == assignee.team_id:
-                         flag = True
-                         break
+                    if team.id == assignee.team_id:
+                        flag = True
+                        break
+                # Also allow if the manager is a member of the same team (common case where role='manager' but manager_id wasn't set)
+                if not flag and current_user.team_id and current_user.team_id == assignee.team_id:
+                    flag = True
                 if not flag:
                      raise HTTPException(status_code=403, detail=f"You can only assign tasks to your team members. User {assignee.id} is in team {assignee.team_id}")
 
@@ -66,6 +71,9 @@ def create_task(
                 if team.id == task.team_id:
                     flag = True
                     break
+            # Also allow assigning to the manager's own team even if manager_id isn't set on the team record
+            if not flag and current_user.team_id and current_user.team_id == task.team_id:
+                flag = True
             if not flag:
                 raise HTTPException(status_code=403, detail="You can only assign tasks to teams you manage")
 
@@ -75,7 +83,7 @@ def create_task(
     if not assignee_id and not task.team_id:
         assignee_id = current_user.id
     
-    return create_new_task(db=db, task=task, user_id=assignee_id, team_id=task.team_id)
+    return create_new_task(db=db, task=task, background_tasks=background_tasks, user_id=assignee_id, team_id=task.team_id)
 
 @router.get("/", response_model=List[TaskResponse])
 def read_my_tasks(
@@ -99,6 +107,7 @@ def read_my_tasks(
 def update_task_details(
     task_id: int,
     task_update: TaskUpdate, 
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -123,18 +132,19 @@ def update_task_details(
              raise HTTPException(status_code=403, detail="Admins cannot complete tasks assigned to others")
 
     # Delegate to service for update and history logging
-    task = update_task_with_history(db, task, task_update, current_user)
+    task = update_task_with_history(db, task, task_update, current_user, background_tasks)
     return task
 
 @router.put("/{task_id}/status", response_model=TaskResponse)
 def update_task_status_endpoint(
     task_id: int,
     task_update: TaskUpdate,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     # Legacy endpoint wrapper
-    return update_task_details(task_id, task_update, current_user, db)
+    return update_task_details(task_id, task_update, background_tasks, current_user, db)
 
 @router.delete("/{task_id}")
 def delete_my_task(

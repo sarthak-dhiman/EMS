@@ -14,7 +14,7 @@ def get_team_by_name(db: Session, name: str) -> Optional[Team]:
     return db.query(Team).filter(Team.name == name).first()
 
 def get_all_teams(db: Session) -> List[Team]:
-    return db.query(Team).options(joinedload(Team.members), joinedload(Team.manager)).all()
+    return db.query(Team).options(joinedload(Team.members), joinedload(Team.manager)).order_by(Team.id.asc()).all()
 
 def get_team_by_id(db: Session, team_id: int) -> Optional[Team]:
     return db.query(Team).filter(Team.id == team_id).options(joinedload(Team.members), joinedload(Team.tasks), joinedload(Team.manager)).first()

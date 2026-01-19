@@ -2,8 +2,8 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 import time
 from app.core.database import Base, engine
-from app.models import task, team, user
-from app.routes import admin, auth, subtask
+from app.models import task, team, user, notification
+from app.routes import admin, auth, subtask, notification as notification_router
 from app.routes import task as task_router
 from app.routes import team as team_router
 from app.core.exceptions import add_exception_handlers
@@ -65,3 +65,4 @@ app.include_router(task_router.router, prefix="/tasks", tags=["Tasks"])
 app.include_router(subtask.router, tags=["SubTasks"])
 app.include_router(admin.router, prefix="/admin", tags=["Admin"])
 app.include_router(team_router.router, prefix="/teams", tags=["Teams"])
+app.include_router(notification_router.router, prefix="/notifications", tags=["Notifications"])
