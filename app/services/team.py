@@ -14,10 +14,10 @@ def get_team_by_name(db: Session, name: str) -> Optional[Team]:
     return db.query(Team).filter(Team.name == name).first()
 
 def get_all_teams(db: Session) -> List[Team]:
-    return db.query(Team).options(joinedload(Team.members)).all()
+    return db.query(Team).options(joinedload(Team.members), joinedload(Team.manager)).all()
 
 def get_team_by_id(db: Session, team_id: int) -> Optional[Team]:
-    return db.query(Team).filter(Team.id == team_id).options(joinedload(Team.members)).first()
+    return db.query(Team).filter(Team.id == team_id).options(joinedload(Team.members), joinedload(Team.tasks), joinedload(Team.manager)).first()
 
 def delete_team(db: Session, team: Team):
     db.delete(team)
@@ -47,10 +47,12 @@ def add_members_to_team(db: Session, team: Team, user_ids: List[int]) -> bool:
     return True
 
 def get_user_team(db: Session, user: User) -> Optional[Team]:
-    if user.team_id:
-        return db.query(Team).filter(Team.id == user.team_id).first()
+    team_query = db.query(Team).options(joinedload(Team.members), joinedload(Team.tasks))
     
-    managed_team = db.query(Team).filter(Team.manager_id == user.id).first()
+    if user.team_id:
+        return team_query.filter(Team.id == user.team_id).first()
+    
+    managed_team = team_query.filter(Team.manager_id == user.id).first()
     if managed_team:
         return managed_team
         

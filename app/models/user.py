@@ -21,3 +21,7 @@ class User(Base):
     managed_teams = relationship("Team", foreign_keys="Team.manager_id", back_populates="manager")
 
     tasks = relationship("Task", back_populates="owner")
+
+    @property
+    def display_team_name(self):
+        return self.team.name if self.team else self.team_name

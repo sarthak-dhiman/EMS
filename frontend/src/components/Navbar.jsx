@@ -23,8 +23,11 @@ function Navbar() {
 
                 <div className="nav-links">
                     <Link to="/" className={`nav-item ${isActive('/')}`}>Dashboard</Link>
-                    {(user.role === 'admin' || user.role === 'manager') && (
+                    {user.role === 'admin' && (
                         <Link to="/admin/teams" className={`nav-item ${isActive('/admin/teams')}`}>Teams</Link>
+                    )}
+                    {user.role === 'manager' && (
+                        <Link to="/team-dashboard" className={`nav-item ${isActive('/team-dashboard')}`}>My Team</Link>
                     )}
                     {user.role === 'admin' && (
                         <>
@@ -35,10 +38,10 @@ function Navbar() {
                 </div>
 
                 <div className="nav-user">
-                    <div className="user-info">
+                    <Link to="/profile" className="user-info nav-item" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', padding: '5px 10px' }}>
                         <span className="user-email">{user.email}</span>
                         <span className="user-role">{user.role}</span>
-                    </div>
+                    </Link>
                     <button onClick={handleLogout} className="logout-btn">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                     </button>
@@ -54,12 +57,12 @@ function Navbar() {
                     top: 0;
                     z-index: 100;
                     width: 100%;
-                    padding: 1.5rem;
+                    padding: 0.8rem 1.5rem;
                 }
                 .nav-container {
                     width: 100%;
                     margin: 0;
-                    height: 70px;
+                    height: 50px;
                     display: flex;
                     align-items: center;
                     justify-content: space-between;

@@ -12,6 +12,48 @@ services:
     ports:
       - "5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data  
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ems_backend
+    restart: always
+    environment:
+      # Note: using 'db' hostname which resolves internally in docker network
+      DATABASE_URL: postgresql://admin:secretpassword@db:5432/internal_db
+      SECRET_KEY: supersecretkeythatnooneknows
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 1440
+      PYTHONUNBUFFERED: 1
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    volumes:
+      - .:/app
+      - /app/venv
+      - /app/__pycache__
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ems_frontend
+    environment:
+      # For browser access, localhost is correct if port mapped. 
+      # But standard dev setup might need VITE proxy. 
+      # With Vite, VITE_API_URL isn't automatically picked up unless encoded in build or accessed via logic.
+      # frontend/src/api.js uses import.meta.env.VITE_API_URL || 'http://localhost:8000'
+      VITE_API_URL: http://localhost:8000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
 volumes:
   postgres_data:

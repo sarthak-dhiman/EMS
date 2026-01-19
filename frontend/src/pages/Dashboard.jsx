@@ -8,6 +8,7 @@ function Dashboard() {
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    const [showCompleted, setShowCompleted] = useState(false);
 
     const [teams, setTeams] = useState([]);
     const [selectedTask, setSelectedTask] = useState(null);
@@ -18,6 +19,7 @@ function Dashboard() {
     const [description, setDescription] = useState('');
     const [priority, setPriority] = useState('medium');
     const [assigneeId, setAssigneeId] = useState('');
+    const [deadline, setDeadline] = useState('');
 
     useEffect(() => {
         fetchTasks();
@@ -53,6 +55,7 @@ function Dashboard() {
                 title,
                 description,
                 priority,
+                deadline: deadline || null,
                 user_id: assigneeId ? parseInt(assigneeId) : null
             };
             await api.post('/tasks/', payload);
@@ -62,6 +65,7 @@ function Dashboard() {
             setDescription('');
             setPriority('medium');
             setAssigneeId('');
+            setDeadline('');
         } catch (error) {
             alert("Failed to create task");
         }
@@ -69,13 +73,17 @@ function Dashboard() {
 
     const handleSubtaskCreate = async (e) => {
         e.preventDefault();
+        if (!subtaskTitle.trim()) {
+            alert("Please enter a subtask title");
+            return;
+        }
         try {
             await api.post(`/tasks/${selectedTask.id}/subtasks`, { title: subtaskTitle });
             setSubtaskTitle('');
             refreshSelectedTask();
             fetchTasks(); // Refresh main list too for progress bars
         } catch (err) {
-            alert("Failed to add subtask");
+            alert(err.response?.data?.detail || "Failed to add subtask");
         }
     };
 
@@ -125,7 +133,31 @@ function Dashboard() {
 
             <div className="content">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                    <h2 style={{ fontSize: '2rem', margin: 0, background: 'linear-gradient(to right, white, #a1a1aa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>My Tasks</h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                        <h2 style={{ fontSize: '2rem', margin: 0, background: 'linear-gradient(to right, white, #a1a1aa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>My Tasks</h2>
+                        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', padding: '2px' }}>
+                            <button
+                                onClick={() => setShowCompleted(false)}
+                                style={{
+                                    background: !showCompleted ? 'rgba(255,255,255,0.1)' : 'transparent',
+                                    color: !showCompleted ? 'white' : 'var(--text-secondary)',
+                                    border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem'
+                                }}
+                            >
+                                Active
+                            </button>
+                            <button
+                                onClick={() => setShowCompleted(true)}
+                                style={{
+                                    background: showCompleted ? 'rgba(255,255,255,0.1)' : 'transparent',
+                                    color: showCompleted ? 'white' : 'var(--text-secondary)',
+                                    border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem'
+                                }}
+                            >
+                                All
+                            </button>
+                        </div>
+                    </div>
                     {isManager && (
                         <button onClick={() => setShowModal(true)} className="create-btn">
                             + New Task
@@ -135,7 +167,7 @@ function Dashboard() {
 
                 {loading ? <p style={{ color: 'var(--text-secondary)' }}>Loading tasks...</p> : (
                     <div className="task-grid">
-                        {tasks.map(task => {
+                        {tasks.filter(t => showCompleted || t.status.toLowerCase() !== 'completed').map(task => {
                             const totalSub = task.subtasks ? task.subtasks.length : 0;
                             const completedSub = task.subtasks ? task.subtasks.filter(s => s.is_completed).length : 0;
                             const progress = totalSub === 0 ? 0 : Math.round((completedSub / totalSub) * 100);
@@ -151,6 +183,11 @@ function Dashboard() {
                                             </div>
                                         </div>
                                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '15px' }}>{task.description || 'No description provided.'}</p>
+                                        {task.deadline && (
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '10px' }}>
+                                                📅 {new Date(task.deadline).toLocaleString()}
+                                            </div>
+                                        )}
                                     </div>
 
                                     {totalSub > 0 && (
@@ -197,6 +234,14 @@ function Dashboard() {
                                 <option value="high">High Priority</option>
                             </select>
                             <input
+                                type="datetime-local"
+                                value={formData?.deadline || ''}
+                                // wait, I used state 'deadline' not formData in Dashboard.jsx quick create?
+                                // Dashboard.jsx uses individual state variables: title, description...
+                                // I need to add 'deadline' state.
+                                onChange={e => setDeadline(e.target.value)}
+                            />
+                            <input
                                 type="number"
                                 placeholder="Assign to User ID (Optional)"
                                 value={assigneeId}
@@ -225,26 +270,56 @@ function Dashboard() {
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '25px' }}>
                             <div>
-                                <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '5px', display: 'block' }}>Status</label>
-                                <select
-                                    value={selectedTask.status}
-                                    onChange={(e) => handleUpdateTaskDetails({ status: e.target.value })}
-                                    style={{ marginBottom: '15px' }}
-                                >
-                                    <option value="Open">Open</option>
-                                    <option value="In Progress">In Progress</option>
-                                    <option value="Completed">Completed</option>
-                                </select>
+                                <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '8px', display: 'block' }}>Status</label>
+                                <div style={{ display: 'flex', gap: '5px', marginBottom: '20px', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '8px' }}>
+                                    {['Open', 'In Progress', 'Completed'].map(status => (
+                                        <button
+                                            key={status}
+                                            onClick={() => handleUpdateTaskDetails({ status })}
+                                            style={{
+                                                flex: 1,
+                                                background: selectedTask.status === status ? 'var(--primary)' : 'transparent',
+                                                color: selectedTask.status === status ? 'white' : 'var(--text-secondary)',
+                                                border: 'none',
+                                                padding: '8px',
+                                                borderRadius: '6px',
+                                                cursor: 'pointer',
+                                                fontSize: '0.8rem',
+                                                transition: 'all 0.2s',
+                                                fontWeight: selectedTask.status === status ? 'bold' : 'normal'
+                                            }}
+                                        >
+                                            {status}
+                                        </button>
+                                    ))}
+                                </div>
 
-                                <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '5px', display: 'block' }}>Priority</label>
-                                <select
-                                    value={selectedTask.priority || 'medium'}
-                                    onChange={(e) => handleUpdateTaskDetails({ priority: e.target.value })}
-                                >
-                                    <option value="low">Low</option>
-                                    <option value="medium">Medium</option>
-                                    <option value="high">High</option>
-                                </select>
+                                <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '8px', display: 'block' }}>Priority</label>
+                                <div style={{ display: 'flex', gap: '5px', marginBottom: '20px', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '8px' }}>
+                                    {['low', 'medium', 'high'].map(prio => (
+                                        <button
+                                            key={prio}
+                                            onClick={() => handleUpdateTaskDetails({ priority: prio })}
+                                            style={{
+                                                flex: 1,
+                                                background: selectedTask.priority === prio ? ({ low: 'var(--success)', medium: 'var(--warning)', high: 'var(--danger)' }[prio]) : 'transparent',
+                                                color: selectedTask.priority === prio ? 'white' : 'var(--text-secondary)',
+                                                border: 'none',
+                                                padding: '8px',
+                                                borderRadius: '6px',
+                                                cursor: 'pointer',
+                                                fontSize: '0.8rem',
+                                                textTransform: 'capitalize',
+                                                opacity: selectedTask.priority === prio ? 1 : 0.7,
+                                                transition: 'all 0.2s',
+                                                fontWeight: selectedTask.priority === prio ? 'bold' : 'normal',
+                                                boxShadow: selectedTask.priority === prio ? '0 2px 10px rgba(0,0,0,0.2)' : 'none'
+                                            }}
+                                        >
+                                            {prio}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                             {isManager && (
                                 <div>

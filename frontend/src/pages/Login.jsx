@@ -83,8 +83,9 @@ function Login() {
                     <button type="submit" className="primary-btn" style={{ width: '100%' }}>Login</button>
                 </form>
 
-                <div style={{ marginTop: '25px', textAlign: 'center', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                    Don't have an account? <Link to="/register" style={{ color: 'var(--primary)', fontWeight: '500', textDecoration: 'none' }}>Register</Link>
+                <div style={{ marginTop: '25px', display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                    <Link to="/forgot-password" style={{ color: 'var(--primary)', textDecoration: 'none' }}>Forgot Password?</Link>
+                    <span>New? <Link to="/register" style={{ color: 'var(--primary)', fontWeight: '500', textDecoration: 'none' }}>Register</Link></span>
                 </div>
             </div>
         </div>

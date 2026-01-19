@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from sqlalchemy.orm import Session
 from app.core.database import SessionLocal, engine, Base
 from app.models.user import User
@@ -151,11 +155,12 @@ def seed_data():
                 print(f"   Created Task: {new_task.title} -> {t_conf['team']} ({t_conf['user'] or 'Unassigned'})")
 
         # Write logins file
-        with open("logins.txt", "w") as f:
+        output_path = os.path.join(os.path.dirname(__file__), '..', 'logins.txt')
+        with open(output_path, "w") as f:
             f.write("\n".join(logins_output))
         
         print("\nSeeding Complete!")
-        print("Credentials saved to logins.txt")
+        print(f"Credentials saved to {output_path}")
 
     except Exception as e:
         print(f"Error seeding DB: {e}")

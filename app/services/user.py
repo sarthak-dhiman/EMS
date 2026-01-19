@@ -46,7 +46,8 @@ def delete_user(db: Session, user_id: int):
     return True
 
 def get_all_users(db: Session, search: str = None, role: str = None):
-    query = db.query(User)
+    from sqlalchemy.orm import joinedload
+    query = db.query(User).options(joinedload(User.team))
     
     if search:
         filters = [

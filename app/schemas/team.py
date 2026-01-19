@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
 from app.schemas.user import UserResponse
+from app.schemas.task import TaskResponse
 
 class TeamBase(BaseModel):
     name: str
@@ -21,5 +22,6 @@ class TeamResponse(TeamBase):
     # We might want to return manager details or member counts in listings
     manager: Optional[UserResponse] = None
     members: List[UserResponse] = []
+    tasks: List[TaskResponse] = []
 
     model_config = {"from_attributes": True}

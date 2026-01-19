@@ -8,6 +8,12 @@ from app.core.security import verify_password, create_access_token
 from app.dependencies import get_current_user
 from app.models.user import User
 from datetime import timedelta
+from pydantic import BaseModel, EmailStr
+from app.core.security import ACCESS_TOKEN_EXPIRE_MINUTES
+from app.models.password_reset import PasswordReset
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
 
 router = APIRouter()
 
@@ -33,7 +39,6 @@ def register_user(user_create: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    
     user = get_user_by_username_or_email(db, form_data.username) # OAuth2 form uses 'username', not 'email'
     
     if not user or not verify_password(form_data.password, user.hashed_password):
@@ -44,19 +49,35 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         )
     
     if not user.is_active:
-         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Account is pending admin approval",
-            headers={"WWW-Authenticate": "Bearer"},
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Inactive user"
         )
     
-    access_token_expires = timedelta(minutes=30)
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
     
     
     return {"access_token": access_token, "token_type": "Bearer"}
+
+@router.post("/forgot-password")
+def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    user = get_user_by_email(db, request.email)
+    if not user:
+        # Return success to avoid enumeration
+        return {"message": "If this email is registered, a password reset request has been submitted."}
+    
+    # Check for existing pending request
+    existing = db.query(PasswordReset).filter(PasswordReset.user_id == user.id, PasswordReset.status == "pending").first()
+    if existing:
+         return {"message": "Request already pending."}
+
+    new_request = PasswordReset(user_id=user.id, email=user.email)
+    db.add(new_request)
+    db.commit()
+    return {"message": "Password reset request submitted."}
 
 @router.get("/me", response_model=UserResponse)
 def read_users_me(current_user: User = Depends(get_current_user)):

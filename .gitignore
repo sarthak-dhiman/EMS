@@ -35,7 +35,9 @@ frontend/yarn-debug.log*
 frontend/yarn-error.log*
 
 # IDEs
-.idea/
-.vscode/
-*.swp
-*.swo
+# OS junk
+.DS_Store
+Thumbs.db
+*.log
+
+

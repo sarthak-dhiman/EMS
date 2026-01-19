@@ -8,7 +8,7 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         if (token) {
             fetchProfile();
         } else {
@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
             setUser(response.data);
         } catch (e) {
             console.error("Failed to fetch profile", e);
-            localStorage.removeItem('token');
+            sessionStorage.removeItem('token');
             setUser(null);
         } finally {
             setLoading(false);
@@ -34,14 +34,14 @@ export const AuthProvider = ({ children }) => {
         formData.append('username', email);
         formData.append('password', password);
         const response = await api.post('/auth/login', formData);
-        localStorage.setItem('token', response.data.access_token);
+        sessionStorage.setItem('token', response.data.access_token);
 
         await fetchProfile();
         return true;
     };
 
     const logout = () => {
-        localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
         setUser(null);
     };
 

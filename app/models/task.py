@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -17,3 +17,9 @@ class Task(Base):
     team = relationship("Team", back_populates="tasks")
     
     subtasks = relationship("SubTask", back_populates="task", cascade="all, delete-orphan")
+    
+    deadline = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+
+    comments = relationship("Comment", back_populates="task", cascade="all, delete-orphan")
+    history = relationship("TaskHistory", back_populates="task", cascade="all, delete-orphan")

@@ -32,12 +32,33 @@ def create_new_team_route(
     
     return create_team(db, team.name, team.description)
 
+@router.get("/my-team", response_model=TeamResponse)
+def get_my_team_route(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    team = get_user_team(db, current_user)
+    if not team:
+        raise HTTPException(status_code=404, detail="You are not part of any team")
+    return team
+
 @router.get("/", response_model=List[TeamResponse])
 def get_all_teams_route(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     return get_all_teams(db)
+
+@router.get("/{team_id}", response_model=TeamResponse)
+def get_team_route(
+    team_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    team = get_team_by_id(db, team_id)
+    if not team:
+        raise HTTPException(status_code=404, detail="Team not found")
+    return team
 
 @router.delete("/{team_id}")
 def delete_team_route(
@@ -116,14 +137,4 @@ def remove_member_route(
         
     return team
 
-# --- Manager Endpoints ---
 
-@router.get("/my-team", response_model=TeamResponse)
-def get_my_team_route(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    team = get_user_team(db, current_user)
-    if not team:
-        raise HTTPException(status_code=404, detail="You are not part of any team")
-    return team

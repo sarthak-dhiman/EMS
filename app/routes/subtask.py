@@ -20,7 +20,9 @@ def create_subtask(
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    # Permission check...
+    # Permission check: Only manager/admin can create subtasks
+    if current_user.role not in ["admin", "manager"]:
+         raise HTTPException(status_code=403, detail="Only managers can create subtasks")
     
     new_subtask = SubTask(
         title=subtask.title,
