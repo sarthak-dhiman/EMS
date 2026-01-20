@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Boolean
-from datetime import datetime
+from datetime import datetime, timezone
 from app.core.database import Base
 
 class NotificationLog(Base):
@@ -13,7 +13,7 @@ class NotificationLog(Base):
     status = Column(String, nullable=False) # SENT, FAILED
     payload = Column(Text, nullable=True) # JSON payload or message body
     error_message = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.now)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 class Notification(Base):
     __tablename__ = "notifications"
@@ -23,4 +23,4 @@ class Notification(Base):
     title = Column(String, nullable=False)
     message = Column(Text, nullable=False)
     is_read = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.now)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

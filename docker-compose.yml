@@ -55,5 +55,15 @@ services:
       - ./frontend:/app
       - /app/node_modules
 
+  locust:
+    image: locustio/locust
+    container_name: ems_locust
+    depends_on:
+      - backend
+    volumes:
+      - .:/app
+    entrypoint: ["/bin/sh", "-c", "sleep 3600"]
+    # we'll run locust as one-off commands against the compose network
+
 volumes:
   postgres_data:

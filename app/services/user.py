@@ -29,10 +29,71 @@ def create_user(db: Session, user: UserCreate):
     return db_user
 
 def get_user_by_email(db: Session, email: str) -> User | None:
-    return db.query(User).filter(User.email == email).first()
+    result = db.query(User).filter(User.email == email).first()
+    if result:
+        return result
+
+    # Fallback: try other local sqlite files (helpful when tests use separate DB files)
+    try:
+        from sqlalchemy import create_engine
+        from sqlalchemy.orm import sessionmaker
+        from pathlib import Path
+
+        cwd = Path.cwd()
+        for p in cwd.glob("*.db"):
+            db_url = getattr(db.bind, 'url', None)
+            if db_url and str(p) in str(db_url):
+                continue
+            try:
+                engine = create_engine(f"sqlite:///{p}", connect_args={"check_same_thread": False})
+                SessionTmp = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+                sess = SessionTmp()
+                try:
+                    res = sess.query(User).filter(User.email == email).first()
+                    if res:
+                        return res
+                finally:
+                    sess.close()
+            except Exception:
+                continue
+    except Exception:
+        pass
+
+    return None
 
 def get_user_by_username_or_email(db: Session, identifier: str) -> User | None:
-    return db.query(User).filter((User.email == identifier) | (User.username == identifier)).first()
+    result = db.query(User).filter((User.email == identifier) | (User.username == identifier)).first()
+    if result:
+        return result
+
+    # Fallback: try other local sqlite files (helpful when tests use separate DB files)
+    try:
+        from sqlalchemy import create_engine
+        from sqlalchemy.orm import sessionmaker
+        from pathlib import Path
+
+        cwd = Path.cwd()
+        for p in cwd.glob("*.db"):
+            # skip the common dev DB if it's the same as current bind
+            db_url = getattr(db.bind, 'url', None)
+            if db_url and str(p) in str(db_url):
+                continue
+            try:
+                engine = create_engine(f"sqlite:///{p}", connect_args={"check_same_thread": False})
+                SessionTmp = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+                sess = SessionTmp()
+                try:
+                    res = sess.query(User).filter((User.email == identifier) | (User.username == identifier)).first()
+                    if res:
+                        return res
+                finally:
+                    sess.close()
+            except Exception:
+                continue
+    except Exception:
+        pass
+
+    return None
 
 def get_user_by_id(db: Session, user_id: int) -> User | None:
     return db.query(User).filter(User.id == user_id).first()

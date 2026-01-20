@@ -17,5 +17,8 @@ COPY . .
 # Expose port
 EXPOSE 8000
 
+# Give execution permissions to start.sh
+RUN chmod +x /app/start.sh
+
 # Run command
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["./start.sh"]

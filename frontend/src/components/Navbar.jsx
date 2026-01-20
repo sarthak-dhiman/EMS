@@ -60,9 +60,48 @@ function Navbar() {
 
     useEffect(() => {
         if (user) {
+            // Initial fetch
             fetchNotifications();
-            const interval = setInterval(fetchNotifications, 30000); // Poll every 30s
-            return () => clearInterval(interval);
+
+            // Connect to SSE
+            const token = sessionStorage.getItem('token');
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+            const eventSource = new EventSource(`${apiUrl}/notifications/stream?token=${token}`);
+
+            // Log when connection opens
+            eventSource.onopen = () => {
+                console.info('SSE connected for notifications');
+            };
+
+            eventSource.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+
+                // Ensure created_at is parsed correctly as local time.
+                if (data.created_at && typeof data.created_at === 'string') {
+                    // If the string lacks timezone info, append 'Z' to treat as UTC
+                    if (!/[zZ]|[+-]\d{2}:?\d{2}$/.test(data.created_at)) {
+                        data.created_at = `${data.created_at}Z`;
+                    }
+                }
+
+                // Add to list if not exists
+                setNotifications(prev => {
+                    if (prev.some(n => n.id === data.id)) return prev;
+                    return [data, ...prev];
+                });
+
+                // Show toast
+                addToast(data.title, data.message);
+            };
+
+            eventSource.onerror = (err) => {
+                // Keep EventSource open to allow automatic reconnects on transient errors.
+                console.error("EventSource error (will attempt reconnect):", err);
+            };
+
+            return () => {
+                eventSource.close();
+            };
         }
     }, [user]);
 

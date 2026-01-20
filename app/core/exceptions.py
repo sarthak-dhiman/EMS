@@ -48,11 +48,27 @@ async def app_exception_handler(request: Request, exc: AppException):
     )
 
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
-    return create_error_response(
+    # Preserve `detail` key to maintain compatibility with some clients/tests
+    resp = create_error_response(
         status_code=exc.status_code,
         message=exc.detail,
         error_type="http_error"
     )
+    # Add a `detail` field mirroring the original Starlette detail
+    try:
+        body = resp.body.decode()
+        # resp is a JSONResponse; update its content dict instead of re-encoding
+        content = resp.body
+    except Exception:
+        pass
+    # Patch the response content to include `detail` alongside `message`
+    resp_content = resp.body
+    # Since JSONResponse stores the content separately, we can set the .media attribute via json
+    import json as _json
+    parsed = _json.loads(resp.body)
+    parsed["detail"] = exc.detail
+    resp.body = _json.dumps(parsed).encode()
+    return resp
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     # Simplify the validation errors for the client

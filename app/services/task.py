@@ -4,6 +4,7 @@ from app.schemas.task import TaskCreate, TaskUpdate
 from fastapi import BackgroundTasks
 from app.services.notification import send_email_notification, send_webhook_notification, create_in_app_notification
 from app.models.team import Team 
+from app.models.user import User
 
 def create_new_task(db: Session, task: TaskCreate, background_tasks: BackgroundTasks = None, user_id: int = None, team_id: int = None):
     # We map the Pydantic schema to the Database Model
@@ -22,20 +23,56 @@ def create_new_task(db: Session, task: TaskCreate, background_tasks: BackgroundT
     # Trigger Notification
     # 1. Email to Assignee
     try:
+        # If assigned to a specific user
         if db_task.user_id:
-            user = db.query(User).filter(User.id == db_task.user_id).first()
-            if user and background_tasks:
-                 # Pass the async function to background tasks
-                 background_tasks.add_task(
-                     send_email_notification, 
-                     None, # Dummy session, function creates its own
-                     user.id, 
-                     f"New Task Assigned: {db_task.title}", 
-                     f"<p>You have been assigned a new task: <b>{db_task.title}</b></p><p>Description: {db_task.description}</p>"
-                 )
-            
-            # 2. In-App Notification (Synchronous since we are already in service)
-            create_in_app_notification(db, user.id, "New Task Assigned", f"You have been assigned: {db_task.title}")
+            assignee = db.query(User).filter(User.id == db_task.user_id).first()
+            if assignee:
+                if background_tasks:
+                    background_tasks.add_task(
+                        send_email_notification,
+                        None,
+                        assignee.id,
+                        f"New Task Assigned: {db_task.title}",
+                        f"<p>You have been assigned a new task: <b>{db_task.title}</b></p><p>Description: {db_task.description}</p>"
+                    )
+
+                create_in_app_notification(db, assignee.id, "New Task Assigned", f"You have been assigned: {db_task.title}", background_tasks=background_tasks)
+
+                # Notify manager of assignee if they exist and are different
+                if assignee.team_id:
+                    team = db.query(Team).filter(Team.id == assignee.team_id).first()
+                    if team and team.manager_id and team.manager_id != assignee.id:
+                        create_in_app_notification(db, team.manager_id, "Team Member Assigned Task", f"{assignee.username} was assigned: {db_task.title}", background_tasks=background_tasks)
+                
+                # Notify admins about new assignment so dashboards refresh for oversight
+                try:
+                    admins = db.query(User).filter(User.role == "admin").all()
+                    for a in admins:
+                        # avoid notifying the creator twice if they are admin and the assignee
+                        create_in_app_notification(db, a.id, "Task Assigned", f"{assignee.username} was assigned task: {db_task.title}", background_tasks=background_tasks)
+                except Exception:
+                    pass
+
+        # If assigned to a team (no specific user), notify all team members and manager
+        if db_task.team_id and not db_task.user_id:
+            team = db.query(Team).filter(Team.id == db_task.team_id).first()
+            if team:
+                members = db.query(User).filter(User.team_id == team.id).all()
+                for m in members:
+                    # Skip if member has no notifications or is the creator (not tracked here)
+                    create_in_app_notification(db, m.id, "New Team Task", f"A new task was created for {team.name}: {db_task.title}", background_tasks=background_tasks)
+
+                # Notify team manager
+                if team.manager_id:
+                    create_in_app_notification(db, team.manager_id, "Team Task Created", f"New task for your team {team.name}: {db_task.title}", background_tasks=background_tasks)
+                
+                # Notify admins for visibility
+                try:
+                    admins = db.query(User).filter(User.role == "admin").all()
+                    for a in admins:
+                        create_in_app_notification(db, a.id, "Team Task Created", f"New task for team {team.name}: {db_task.title}", background_tasks=background_tasks)
+                except Exception:
+                    pass
     except Exception as e:
         print(f"Notification Error: {e}")
 
@@ -117,14 +154,17 @@ def update_task_with_history(db: Session, task: Task, updates: TaskUpdate, user:
     changes = []
     
     if updates.status and updates.status != task.status:
-        changes.append(("status", task.status, updates.status))
-        task.status = updates.status
-        if updates.status == "completed":
+        old_status = task.status
+        new_status = updates.status
+        # Normalize comparisons to be case-insensitive
+        changes.append(("status", old_status, new_status))
+        task.status = new_status
+        if str(new_status).lower() == "completed":
             task.completed_at = datetime.now()
         else:
             task.completed_at = None
             
-        # Trigger Webhook if Team has URL
+        # Trigger Webhook if Team has URL (schedule if background tasks available)
         if task.team_id and background_tasks:
             team = db.query(Team).filter(Team.id == task.team_id).first()
             if team and team.webhook_url:
@@ -136,45 +176,45 @@ def update_task_with_history(db: Session, task: Task, updates: TaskUpdate, user:
                     "updated_by": user.username
                 }
                 background_tasks.add_task(send_webhook_notification, None, task.team_id, "task_status_updated", payload)
-                
-                # In-App Notification to Assignee
-                if task.user_id:
-                    create_in_app_notification(db, task.user_id, "Task Status Updated", f"Task '{task.title}' status changed to {updates.status}")
 
-                # SPECIAL COMPLETION NOTIFICATIONS
-                if updates.status == "completed":
-                    # 1. Get all Admins
-                    admins = db.query(User).filter(User.role == "admin").all()
-                    
-                    # 2. Get Team Manager
-                    manager = None
-                    if task.team_id:
-                        team = db.query(Team).filter(Team.id == task.team_id).first()
-                        if team and team.manager_id:
-                            manager = db.query(User).filter(User.id == team.manager_id).first()
+        # In-App Notification to Assignee (always run when status changes)
+        if task.user_id:
+            try:
+                create_in_app_notification(db, task.user_id, "Task Status Updated", f"Task '{task.title}' status changed to {updates.status}", background_tasks=background_tasks)
+            except Exception:
+                pass
 
-                    # Notification Targets
-                    targets = set()
-                    
-                    if user.role == "employee":
-                        # Send to Admins and Manager
-                        for a in admins: targets.add(a.id)
-                        if manager: targets.add(manager.id)
-                    elif user.role == "manager":
-                        # Send to Admins
-                        for a in admins: targets.add(a.id)
-                    
-                    # Remove self from targets
-                    if user.id in targets:
-                        targets.remove(user.id)
-                        
-                    for target_id in targets:
-                        create_in_app_notification(
-                            db, 
-                            target_id, 
-                            "Task Completed", 
-                            f"{user.username} has completed the task: {task.title}"
-                        )
+        # SPECIAL COMPLETION NOTIFICATIONS: If task was completed, notify relevant parties
+        if str(new_status).lower() == "completed":
+            # 1. Get all Admins
+            admins = db.query(User).filter(User.role == "admin").all()
+            
+            # 2. Get Team Manager (if any)
+            manager = None
+            if task.team_id:
+                team = db.query(Team).filter(Team.id == task.team_id).first()
+                if team and team.manager_id:
+                    manager = db.query(User).filter(User.id == team.manager_id).first()
+
+            # Notification Targets: admins + team manager (if present)
+            targets = set()
+            for a in admins:
+                if a and a.id != user.id:
+                    targets.add(a.id)
+            if manager and manager.id != user.id:
+                targets.add(manager.id)
+
+            for target_id in targets:
+                try:
+                    create_in_app_notification(
+                        db,
+                        target_id,
+                        "Task Completed",
+                        f"{user.username} has completed the task: {task.title}",
+                        background_tasks=background_tasks
+                    )
+                except Exception:
+                    pass
 
     if updates.priority and updates.priority != task.priority:
         # Employee Restriction: cannot change priority

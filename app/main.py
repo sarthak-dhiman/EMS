@@ -8,10 +8,22 @@ from app.routes import task as task_router
 from app.routes import team as team_router
 from app.core.exceptions import add_exception_handlers
 from app.core.logging_config import logger
-# Create database tables
-Base.metadata.create_all(bind=engine)
+# Database initialization is now handled via Alembic migrations in start.sh
+# Base.metadata.create_all(bind=engine)
+from app.middleware.rate_limiter import SimpleRateLimitMiddleware
+from app.jobs.deadline_checker import start_in_thread
+# Scheduler (APScheduler) is optional. If available, prefer it for more robust scheduling.
+try:
+    from app.jobs.scheduler import start_scheduler, stop_scheduler
+    _HAS_SCHEDULER = True
+except Exception:
+    _HAS_SCHEDULER = False
+import os
 
 app = FastAPI()
+
+# Attach simple rate limiter (in-memory). Tune via RATE_LIMIT_REQUESTS and RATE_LIMIT_WINDOW_SECONDS.
+app.add_middleware(SimpleRateLimitMiddleware)
 
 print("--- APP STARTUP: LOGGING INITIALIZED ---") # Sanity check for stdout
 
@@ -66,3 +78,43 @@ app.include_router(subtask.router, tags=["SubTasks"])
 app.include_router(admin.router, prefix="/admin", tags=["Admin"])
 app.include_router(team_router.router, prefix="/teams", tags=["Teams"])
 app.include_router(notification_router.router, prefix="/notifications", tags=["Notifications"])
+from app.routes import report as report_router
+app.include_router(report_router.router, prefix="/reports", tags=["Reports"])
+
+
+@app.on_event("startup")
+def _start_background_jobs():
+    # Start the deadline checker thread if enabled via env
+    try:
+        if os.getenv("ENABLE_DEADLINE_CHECKER", "true").lower() in ("1", "true", "yes"):
+            interval = int(os.getenv("DEADLINE_CHECKER_INTERVAL_SECONDS", "300"))
+            if _HAS_SCHEDULER:
+                try:
+                    app.state._apscheduler = start_scheduler(interval_seconds=interval)
+                    logger.info("APScheduler deadline checker started with interval %s seconds", interval)
+                except Exception:
+                    # Fallback to simple thread if scheduler fails
+                    app.state._deadline_stop = start_in_thread(interval_seconds=interval)
+                    logger.info("Fallback deadline checker thread started with interval %s seconds", interval)
+            else:
+                app.state._deadline_stop = start_in_thread(interval_seconds=interval)
+                logger.info("Deadline checker started with interval %s seconds", interval)
+    except Exception as e:
+        logger.exception("Failed to start background jobs: %s", e)
+
+
+@app.on_event("shutdown")
+def _stop_background_jobs():
+    try:
+        stop = getattr(app.state, "_deadline_stop", None)
+        if stop:
+            stop.set()
+            logger.info("Deadline checker stop requested")
+        sched = getattr(app.state, "_apscheduler", None)
+        if sched:
+            try:
+                stop_scheduler(sched)
+            except Exception:
+                pass
+    except Exception:
+        pass
