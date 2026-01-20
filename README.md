@@ -1,4 +1,4 @@
-# Employee Management System (EMS)
+# Employee Task Management System
 
 A comprehensive full-stack application for managing employees, teams, and tasks within an organization. Built with FastAPI (Backend) and React (Frontend).
 
